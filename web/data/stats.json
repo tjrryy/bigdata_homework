@@ -1,0 +1,10 @@
+{
+  "total": 167454,
+  "types": {
+    "compositional": 500,
+    "comparison": 500,
+    "bridge_comparison": 500,
+    "inference": 500
+  },
+  "sampleSize": 2000
+}

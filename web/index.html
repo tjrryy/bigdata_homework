@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多跳问答知识库可视化</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { text-align: center; padding: 30px 0; }
+        h1 { color: #4a90d9; font-size: 2rem; }
+        .subtitle { color: #888; margin-top: 10px; }
+        
+        .data-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .data-selector select {
+            padding: 10px 20px;
+            background: #2a2a2a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .mode-badge {
+            padding: 8px 16px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #67c23a;
+            border: 1px solid #67c23a;
+        }
+        .mode-badge.api-mode {
+            color: #e6a23c;
+            border-color: #e6a23c;
+        }
+        .mode-note {
+            font-size: 0.75rem;
+            color: #888;
+            align-self: center;
+        }
+        .mode-hint {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            background: #2a2a2a;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .tab-btn.active { background: #4a90d9; }
+        
+        .panel { display: none; }
+        .panel.active { display: block; }
+        
+        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-box input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+            color: #fff;
+            font-size: 1rem;
+        }
+        .search-box input:focus { outline: none; border-color: #4a90d9; }
+        .search-box button {
+            padding: 12px 24px;
+            background: #4a90d9;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+        }
+        
+        #result-count { color: #888; margin-bottom: 10px; display: block; }
+        .result-item {
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .result-item:hover { background: #333; }
+        .result-type {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+        }
+        .compositional { background: #4a90d9; }
+        .comparison { background: #67c23a; }
+        .bridge_comparison { background: #e6a23c; }
+        .inference { background: #f56c6c; }
+        .result-question { margin-bottom: 8px; }
+        .result-answer { color: #888; }
+        .result-answer span { color: #67c23a; font-weight: bold; }
+        
+        .cluster-controls { display: flex; gap: 20px; margin-bottom: 20px; }
+        .cluster-controls select {
+            padding: 10px;
+            background: #2a2a2a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            color: #fff;
+        }
+        #cluster-chart {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 300px;
+            margin-bottom: 20px;
+        }
+        .cluster-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .cluster-card {
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            border-left: 4px solid #4a90d9;
+        }
+        .cluster-card h4 { margin-bottom: 8px; color: #4a90d9; }
+        .cluster-card .count { font-size: 1.5rem; font-weight: bold; }
+        .cluster-card .examples { margin-top: 10px; font-size: 0.85rem; color: #888; }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-card:nth-child(1) { background: linear-gradient(135deg, #4a90d9, #5a7fd9); }
+        .stat-card:nth-child(2) { background: linear-gradient(135deg, #67c23a, #7bc94d); }
+        .stat-card:nth-child(3) { background: linear-gradient(135deg, #e6a23c, #f0b03c); }
+        .stat-card:nth-child(4) { background: linear-gradient(135deg, #f56c6c, #ff7c7c); }
+        .stat-card h3 { font-size: 0.9rem; font-weight: normal; opacity: 0.9; }
+        .stat-card .value { font-size: 2rem; font-weight: bold; }
+        .stat-card .pct { font-size: 0.85rem; opacity: 0.8; }
+        
+        footer { text-align: center; padding: 30px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>多跳问答知识库可视化</h1>
+            <p class="subtitle">Multi-hop QA Knowledge Base Visualization</p>
+        </header>
+
+        <div class="data-selector">
+            <select id="dataset-select">
+                <option value="train" selected>训练集 (Train)</option>
+                <option value="dev">验证集 (Dev)</option>
+                <option value="test">测试集 (Test)</option>
+            </select>
+            <span id="mode-indicator" class="mode-badge">静态模式</span>
+            <span class="mode-note">* GitHub Pages不支持后端，详见 server/README.md 的 Redis 启动方案</span>
+        </div>
+
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="search">搜索查询</button>
+            <button class="tab-btn" data-tab="cluster">聚类分析</button>
+            <button class="tab-btn" data-tab="stats">数据统计</button>
+        </nav>
+        
+        <p class="mode-hint" id="mode-hint">当前使用静态JSON文件 | 切换到API模式: 编辑 js/app.js 设置 API_MODE=true</p>
+
+        <main>
+            <section id="search-panel" class="panel active">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="输入关键词搜索...">
+                    <button id="search-btn">搜索</button>
+                </div>
+                <span id="result-count">加载中...</span>
+                <div id="results">
+                    <div class="result-item" style="text-align:center;color:#888;">正在加载数据，请稍候...</div>
+                </div>
+            </section>
+
+            <section id="cluster-panel" class="panel">
+                <div class="cluster-controls">
+                    <select id="cluster-type">
+                        <option value="type">按问题类型</option>
+                        <option value="question-start">按问题开头词</option>
+                        <option value="answer-type">按答案类型</option>
+                    </select>
+                </div>
+                <div id="cluster-chart"></div>
+                <div id="cluster-details" class="cluster-cards"></div>
+            </section>
+
+            <section id="stats-panel" class="panel">
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <h3>总记录数</h3>
+                        <p class="value" id="stat-total">-</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>组合型</h3>
+                        <p class="value" id="stat-compositional">-</p>
+                        <p class="pct" id="stat-compositional-pct">-</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>比较型</h3>
+                        <p class="value" id="stat-comparison">-</p>
+                        <p class="pct" id="stat-comparison-pct">-</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>桥接比较型</h3>
+                        <p class="value" id="stat-bridge">-</p>
+                        <p class="pct" id="stat-bridge-pct">-</p>
+                    </div>
+                </div>
+                <div id="type-chart"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>数据来源: HotpotQA Multi-hop Reasoning Dataset</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

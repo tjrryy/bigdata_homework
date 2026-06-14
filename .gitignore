@@ -1,0 +1,8 @@
+# 排除大文件
+data/*.json
+!data/*_samples.json
+
+# 其他
+.DS_Store
+wget-log
+*.log
