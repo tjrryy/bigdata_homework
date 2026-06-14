@@ -30,45 +30,44 @@ python -m http.server 8080
 
 ### API模式（需要Redis）
 
-详见 [web/server/README.md](web/server/README.md)
+详见 [server/README.md](server/README.md)
 
 ```bash
 # 1. 安装依赖
-cd web/server
+cd server
 pip install -r requirements.txt
 
 # 2. 启动Redis
 brew services start redis
 
 # 3. 导入数据
-python import_to_redis.py --data-dir ../data
+python import_to_redis.py --data-dir data
 
 # 4. 启动API服务器
 python api_server.py --port 5000
 
 # 5. 修改前端配置
-# 编辑 web/js/app.js，设置 API_MODE = true
+# 编辑 js/app.js，设置 API_MODE = true
 
 # 6. 启动前端
-cd web && python -m http.server 8080
+python -m http.server 8080
 ```
 
 ## 项目结构
 
 ```
 .
-├── web/
-│   ├── index.html          # 主页面
-│   ├── js/app.js          # 应用逻辑
-│   ├── data/              # 样本数据
-│   │   ├── train_samples.json
-│   │   ├── dev_samples.json
-│   │   └── test_samples.json
-│   └── server/            # 后端服务（可选）
-│       ├── api_server.py
-│       ├── import_to_redis.py
-│       └── requirements.txt
-└── README.md
+├── index.html          # 主页面
+├── js/app.js          # 应用逻辑
+├── css/style.css      # 样式
+├── data/              # 样本数据
+│   ├── train_samples.json
+│   ├── dev_samples.json
+│   └── test_samples.json
+└── server/            # 后端服务（可选）
+    ├── api_server.py
+    ├── import_to_redis.py
+    └── requirements.txt
 ```
 
 ## 数据来源
